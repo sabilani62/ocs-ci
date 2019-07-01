@@ -1,14 +1,46 @@
-image: python:3.7
+image: registry.access.redhat.com/ubi8/python-36
+
+# Change pip's cache directory to be inside the project directory since we can
+# only cache local items.
+variables:
+  AWS_PROFILE: "openshift-dev"
+  AWS_REGION: "us-east-1"
+  AWS_DOMAIN: "devcluster.openshift.com"
+  AWS_SHARED_CREDENTIALS_FILE: "$CI_PROJECT_DIR/.aws/credentials"
+  AWS_CONFIG_FILE: "$CI_PROJECT_DIR/.aws/config"
+  CLUSTER_USER: "$GITLAB_USER_LOGIN"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 before_script:
-   - pip install tox
+  - python -V
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install tox
 
 stages:
-   - build
+  - lint_and_unit
+  - functional_test
 
-tox:
-   stage: build
-   script:
-      - tox
-   tags:
-      - docker
+tox_lint:
+  stage: lint_and_unit
+  script:
+    - tox -e flake8
+
+tox_test:
+  stage: lint_and_unit
+  script:
+    - tox -e py36
+
+functional:
+  stage: functional_test
+  script:
+    - bin/functional.sh
+    - pip install -r requirements.txt
+    - python setup.py develop
+    - run-ci -m "tier1" --deploy --teardown --ocsci-conf=$CI_PROJECT_DIR/ocs-ci.yaml --cluster-path=$CI_PROJECT_DIR/cluster
+  artifacts:
+    when: always
+    paths:
+      - cluster/
+      - logs/
