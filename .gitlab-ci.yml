@@ -1,7 +1,12 @@
 image: registry.access.redhat.com/ubi8/python-36
 
-# Change pip's cache directory to be inside the project directory since we can
-# only cache local items.
+# Private variables that must be set (and masked!) in the UI:
+#   AWS_ACCESS_KEY_ID     : The access key to use for AWS
+#   AWS_SECRET_ACCESS_KEY : The secret key to use for AWS
+#   PULL_SECRET           : The base64-encoded JSON pull secret for OpenShift/Rook
+# Variables that must be set (but not masked) in the UI:
+#   AWS_REGION            : The AWS region to use
+
 variables:
   AWS_PROFILE: "openshift-dev"
   AWS_DOMAIN: "devcluster.openshift.com"
