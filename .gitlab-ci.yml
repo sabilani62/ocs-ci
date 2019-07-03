@@ -21,18 +21,18 @@ before_script:
   - python setup.py develop
 
 stages:
-  - lint_and_unit_test
+  - lint and unit test
   - deploy
   - tier1
   - teardown
 
 lint:
-  stage: lint_and_unit_test
+  stage: lint and unit test
   script:
     - tox -e flake8
 
 unit tests:
-  stage: lint_and_unit_test
+  stage: lint and unit test
   script:
     - tox -e py36
 
