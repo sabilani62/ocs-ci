@@ -360,28 +360,32 @@ def run_cmd(cmd, **kwargs):
         CommandFailed: In case the command execution fails
 
     Returns:
-        (str) Decoded stdout of command
-
+        (str) stdout of command
     """
     log.info(f"Executing command: {cmd}")
     if isinstance(cmd, str):
         cmd = shlex.split(cmd)
-    r = subprocess.run(
+    p = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         stdin=subprocess.PIPE,
         **kwargs
     )
-    log.debug(f"Command output: {r.stdout.decode()}")
-    if r.stderr and not r.returncode:
-        log.warning(f"Command warning:: {r.stderr.decode()}")
-    if r.returncode:
+    out_lines = list()
+    while p.poll() is None:
+        line = p.stdout.readline().decode()
+        if line:
+            out_lines.append(line)
+            log.debug(f"stdout: {line.rstrip()}")
+        line = p.stderr.readline().decode()
+        if line:
+            log.warning(f"stderr: {line.rstrip()}")
+    if p.returncode:
         raise CommandFailed(
             f"Error during execution of command: {cmd}."
-            f"\nError is {r.stderr.decode()}"
         )
-    return r.stdout.decode()
+    return ''.join(out_lines)
 
 
 def download_file(url, filename):
