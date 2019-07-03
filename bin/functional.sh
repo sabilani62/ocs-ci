@@ -22,7 +22,7 @@ setup_pull_secret () {
 setup_ocsci_conf () {
   cat << EOF > $CI_PROJECT_DIR/ocs-ci.yaml
 RUN:
-  log_dir: $CI_PROJECT_DIR
+  log_dir: $CI_PROJECT_DIR/logs
 ENV_DATA:
   platform: "AWS"
   cluster_name: "$CLUSTER_USER-ocs-ci-$CI_PIPELINE_ID"
