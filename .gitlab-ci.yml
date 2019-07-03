@@ -39,17 +39,19 @@ unit tests:
 deploy:
   stage: deploy
   script:
-    - run-ci -m deployment --deploy --ocsci-conf=$CI_PROJECT_DIR/ocs-ci.yaml --cluster-path=$CI_PROJECT_DIR/cluster
+    - run-ci -m deployment --deploy --ocsci-conf=ocs-ci.yaml --cluster-path=cluster
   artifacts:
     when: always
     paths:
+      - ocs-ci.yaml
       - cluster/
       - logs/
+      - bin/oc
 
 tier1:
   stage: tier1
   script:
-    - run-ci -m tier1 --ocsci-conf=$CI_PROJECT_DIR/ocs-ci.yaml --cluster-path=$CI_PROJECT_DIR/cluster
+    - run-ci -m tier1 --ocsci-conf=ocs-ci.yaml --cluster-path=cluster
   artifacts:
     when: always
     paths:
@@ -59,7 +61,7 @@ teardown:
   stage: teardown
   when: always
   script:
-    - run-ci -m deployment --teardown --ocsci-conf=$CI_PROJECT_DIR/ocs-ci.yaml --cluster-path=$CI_PROJECT_DIR/cluster
+    - run-ci -m deployment --teardown --ocsci-conf=ocs-ci.yaml --cluster-path=cluster
   artifacts:
     when: always
     paths:
