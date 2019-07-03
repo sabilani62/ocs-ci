@@ -4,7 +4,6 @@ image: registry.access.redhat.com/ubi8/python-36
 # only cache local items.
 variables:
   AWS_PROFILE: "openshift-dev"
-  AWS_REGION: "us-east-1"
   AWS_DOMAIN: "devcluster.openshift.com"
   AWS_SHARED_CREDENTIALS_FILE: "$CI_PROJECT_DIR/.aws/credentials"
   AWS_CONFIG_FILE: "$CI_PROJECT_DIR/.aws/config"
@@ -19,28 +18,54 @@ before_script:
   - pip install tox
 
 stages:
-  - lint_and_unit
-  - functional_test
+  - lint_and_unit_test
+  - setup
+  - deploy
+  - tier1
+  - teardown
 
-tox_lint:
-  stage: lint_and_unit
+lint:
+  stage: lint_and_unit_test
   script:
     - tox -e flake8
 
-tox_test:
-  stage: lint_and_unit
+unit tests:
+  stage: lint_and_unit_test
   script:
     - tox -e py36
 
-functional:
-  stage: functional_test
+setup:
+  stage: setup
   script:
     - bin/functional.sh
     - pip install -r requirements.txt
     - python setup.py develop
-    - run-ci -m "tier1" --deploy --teardown --ocsci-conf=$CI_PROJECT_DIR/ocs-ci.yaml --cluster-path=$CI_PROJECT_DIR/cluster
+
+deploy:
+  stage: deploy
+  script:
+    - run-ci -m deployment --deploy --ocsci-conf=$CI_PROJECT_DIR/ocs-ci.yaml --cluster-path=$CI_PROJECT_DIR/cluster
   artifacts:
     when: always
     paths:
       - cluster/
+      - logs/
+
+tier1:
+  stage: tier1
+  script:
+    - run-ci -m tier1 --ocsci-conf=$CI_PROJECT_DIR/ocs-ci.yaml --cluster-path=$CI_PROJECT_DIR/cluster
+  artifacts:
+    when: always
+    paths:
+      - logs/
+
+teardown:
+  stage: teardown
+  when: always
+  script:
+    - run-ci -m deployment --teardown --ocsci-conf=$CI_PROJECT_DIR/ocs-ci.yaml --cluster-path=$CI_PROJECT_DIR/cluster
+  artifacts:
+    when: always
+    paths:
       - logs/
