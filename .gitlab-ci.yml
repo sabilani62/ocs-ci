@@ -16,10 +16,12 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
   - pip install tox
+  - bin/functional.sh
+  - pip install -r requirements.txt
+  - python setup.py develop
 
 stages:
   - lint_and_unit_test
-  - setup
   - deploy
   - tier1
   - teardown
@@ -33,13 +35,6 @@ unit tests:
   stage: lint_and_unit_test
   script:
     - tox -e py36
-
-setup:
-  stage: setup
-  script:
-    - bin/functional.sh
-    - pip install -r requirements.txt
-    - python setup.py develop
 
 deploy:
   stage: deploy
