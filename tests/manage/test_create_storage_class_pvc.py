@@ -41,19 +41,18 @@ def teardown_rbd():
     Tearing down the environment
     Deleting pod,replicated pool,pvc,storageclass,secret of rbd
     """
-    global RBD_PVC_OBJ, RBD_POD_OBJ
+    global RBD_PVC_OBJ, RBD_POD_OBJ, RBD_PV
     log.info('deleting rbd pod')
     RBD_POD_OBJ.delete()
     log.info("Deleting RBD PVC")
     RBD_PVC_OBJ.delete()
-    assert helpers.validate_pv_delete(RBD_SC_OBJ.name)
+    assert helpers.validate_pv_delete(RBD_PVC_OBJ.backed_pv)
     log.info("Deleting CEPH BLOCK POOL")
     RBD_POOL.delete()
     log.info("Deleting RBD Secret")
     RBD_SECRET_OBJ.delete()
     log.info("Deleting RBD Storageclass")
     RBD_SC_OBJ.delete()
-    log.info("Deleting CephFS PVC")
 
 
 @pytest.fixture(scope='function')
@@ -80,12 +79,12 @@ def setup_fs():
 
 
 def teardown_fs():
-    global CEPHFS_PVC_OBJ, CEPHFS_POD_OBJ
+    global CEPHFS_PVC_OBJ, CEPHFS_POD_OBJ, CEPHFS_PV
     log.info('deleting cephfs pod')
     CEPHFS_POD_OBJ.delete()
     log.info('deleting cephfs pvc')
     CEPHFS_PVC_OBJ.delete()
-    assert helpers.validate_pv_delete(CEPHFS_SC_OBJ.name)
+    assert helpers.validate_pv_delete(CEPHFS_PVC_OBJ.backed_pv)
     log.info("Deleting CEPHFS Secret")
     CEPHFS_SECRET_OBJ.delete()
     log.info("Deleting CephFS Storageclass")
@@ -106,8 +105,11 @@ class TestOSCBasics(ManageTest):
             'test-rbd', 'pvc'
         )
         RBD_PVC_OBJ = helpers.create_pvc(RBD_SC_OBJ.name, pvc_name)
+        if RBD_PVC_OBJ.backed_pv is None:
+            RBD_PVC_OBJ.reload()
         RBD_POD_OBJ = helpers.create_pod(
-            constants.CEPHBLOCKPOOL, RBD_PVC_OBJ.name)
+            constants.CEPHBLOCKPOOL, RBD_PVC_OBJ.name
+        )
 
     @pytest.mark.polarion_id("OCS-346")
     def test_basics_cephfs(self, test_fixture_cephfs):
@@ -121,7 +123,11 @@ class TestOSCBasics(ManageTest):
             'test-cephfs', 'pvc'
         )
         CEPHFS_PVC_OBJ = helpers.create_pvc(
-            CEPHFS_SC_OBJ.name, pvc_name=pvc_name)
+            CEPHFS_SC_OBJ.name, pvc_name=pvc_name
+        )
+        if CEPHFS_PVC_OBJ.backed_pv is None:
+            CEPHFS_PVC_OBJ.reload()
         log.info('creating cephfs pod')
         CEPHFS_POD_OBJ = helpers.create_pod(
-            constants.CEPHFILESYSTEM, CEPHFS_PVC_OBJ.name)
+            constants.CEPHFILESYSTEM, CEPHFS_PVC_OBJ.name
+        )
