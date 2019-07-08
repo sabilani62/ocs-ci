@@ -263,10 +263,9 @@ def create_pvc(sc_name, pvc_name=None):
     )
     pvc_data['metadata']['namespace'] = defaults.ROOK_CLUSTER_NAMESPACE
     pvc_data['spec']['storageClassName'] = sc_name
-
     ocs_obj = pvc.PVC(**pvc_data)
-    pvc_name = pvc_data.get('metadata').get('name')
     created_pvc = ocs_obj.create()
+    ocs_obj.reload()
     assert created_pvc, f"Failed to create resource {pvc_name}"
     return ocs_obj
 
@@ -557,32 +556,36 @@ def run_io_with_rados_bench(**kw):
 def get_all_pvs():
     """
     Gets all pv in given namespace
+
     Returns:
          dict: Dict of all pvc in namespaces
     """
     ocp_pv_obj = ocp.OCP(
         kind=constants.PV, namespace=defaults.ROOK_CLUSTER_NAMESPACE)
-    output = ocp_pv_obj.get()
-    return output
+    return ocp_pv_obj.get()
 
 
 @retry(AssertionError, tries=10, delay=5, backoff=1)
-def validate_pv_delete(sc_name):
+def validate_pv_delete(pv):
     """
     validates if pv is deleted after pvc deletion
+
+    Args:
+        pv (str): pv from pvc to validates
     Returns:
         bool: True if deletion is successful
+
+    Raises:
+        AssertionError: If pv is not deleted
     """
     ocp_pv_list = get_all_pvs()
-    pv_list = ocp_pv_list['items']
-    logging.info(pv_list)
-    if pv_list:
-        for item in pv_list:
-            if sc_name == item['spec']['storageClassName']:
-                if item['spec']['persistentVolumeReclaimPolicy'] == 'Delete':
-                    raise AssertionError
-                elif item['spec']['persistentVolumeReclaimPolicy'] == 'Retain':
-                    return True
+    pv_all_list = ocp_pv_list['items']
+    if pv_all_list:
+        for item in pv_all_list:
+            logging.info(item['metadata']['name'])
+            logging.info(pv)
+            if item['metadata']['name'] == pv:
+                raise AssertionError
             else:
                 return True
     else:

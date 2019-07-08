@@ -1,7 +1,6 @@
 import pytest
 from tests import helpers
-from ocs_ci.ocs import constants, defaults
-from ocs_ci.utility import templating
+from ocs_ci.ocs import constants
 
 
 @pytest.fixture()
@@ -110,11 +109,4 @@ def create_pod(request):
     Create a pod
     """
     class_instance = request.node.cls
-
-    pod_data = templating.load_yaml_to_dict(constants.CSI_RBD_POD_YAML)
-    pod_data['metadata']['name'] = helpers.create_unique_resource_name(
-        'test', 'pod'
-    )
-    pod_data['metadata']['namespace'] = defaults.ROOK_CLUSTER_NAMESPACE
-    pod_data['spec']['volumes'][0]['persistentVolumeClaim']['claimName'] = class_instance.pvc_obj.name
-    class_instance.pod_obj = helpers.create_pod(**pod_data)
+    class_instance.pod_obj = helpers.create_pod(interface_type=constants.CEPHBLOCKPOOL, pvc=class_instance.pvc_obj.name)
