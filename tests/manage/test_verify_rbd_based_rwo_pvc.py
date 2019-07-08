@@ -111,25 +111,15 @@ class TestRbdBasedRwoPvc(ManageTest):
 
         # Create first pod
         log.info(f"Creating two pods which use PVC {pvc_obj.name}")
-        pod_data = templating.load_yaml_to_dict(constants.CSI_RBD_POD_YAML)
-        pod_data['metadata']['name'] = helpers.create_unique_resource_name(
-            'test', 'pod'
-        )
-        pod_data['metadata']['namespace'] = self.namespace
-        pod_data['spec']['volumes'][0]['persistentVolumeClaim']['claimName'] = (
-            pvc_obj.name
-        )
-        pod_obj = helpers.create_pod(**pod_data)
-
+        pod_obj = helpers.create_pod(constants.CEPHBLOCKPOOL, pvc_obj.name)
+        logging.info(pod_obj.get())
         node_pod1 = pod_obj.get()['spec']['nodeName']
 
         # Create second pod
         # Try creating pod until it is on a different node than first pod
         for retry in range(1, 6):
-            pod_data['metadata']['name'] = helpers.create_unique_resource_name(
-                'test', 'pod'
-            )
-            pod_obj2 = helpers.create_pod(wait=False, **pod_data)
+            pod_obj2 = helpers.create_pod(constants.CEPHBLOCKPOOL, pvc_obj.name)
+            logging.info(pod_obj2.get())
             node_pod2 = pod_obj2.get()['spec']['nodeName']
             if node_pod1 != node_pod2:
                 break
